@@ -26,22 +26,22 @@ const cols = 10;
 // =========================
 
 const playerImage = new Image();
-player.src = "assets/player.png";
+player.src = "player.png"; // tekstury jeszcze konczone
 
 const wallImage = new Image();
-wallImage.src = "assets/wall.png";
+wallImage.src = "gray brick wall.png";
 
 const floorImage = new Image();
-floorImage.src = "assets/floor.png";
+floorImage.src = "floor 4.png";
 
 const enemyImage = new Image();
-enemyImage.src = "assets/enemy.png";
+enemyImage.src = "enemy.png"; // tekstury jeszcze konczone
 
 const itemImage = new Image();
-itemImage.src = "assets/item.png";
+itemImage.src = "item.png"; // tekstury jeszcze konczone
 
 const goalImage = new Image();
-goalImage.src = "assets/goal.png";
+goalImage.src = "assets/goal.png"; // tekstury jeszcze konczone
 
 // =========================
 // DANE GRACZA
