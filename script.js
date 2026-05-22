@@ -41,7 +41,7 @@ const itemImage = new Image();
 itemImage.src = "item.png"; // tekstury jeszcze konczone
 
 const goalImage = new Image();
-goalImage.src = "assets/goal.png"; // tekstury jeszcze konczone
+goalImage.src = "goal.png"; // tekstury jeszcze konczone
 
 // =========================
 // DANE GRACZA
