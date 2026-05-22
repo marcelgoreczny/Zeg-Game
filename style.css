@@ -1,0 +1,241 @@
+/* RESET I PODSTAWOWE STYLE GLOBALNY */
+/* Uniwersalny reset - usuwa domyślne marginesy i paddingi,
+   ustawia box-sizing na border-box dla łatwiejszego liczenia wymiarów */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Główny styl dla body - ustawia tło, czcionkę i centrowanie zawartości */
+body {
+    /* Ciemne tło w odcieniu grafitu */
+    background-color: #1a1a2e;
+    
+    /* Jasny, stonowany kolor tekstu - nie czysty biały, łagodniejszy dla oczu */
+    color: #e0e0e0;
+    
+    /* Bezszeryfowa czcionka systemowa jako fallback */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    
+    /* Flexbox do wyśrodkowania zawartości */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    
+    /* Minimalna wysokość na cały viewport */
+    min-height: 100vh;
+    
+    /* Padding górny dla odstępu od krawędzi */
+    padding-top: 20px;
+}
+
+/* ==============================================
+   EKRAN STARTOWY
+   ============================================== */
+
+#startScreen {
+    /* Centrowanie tekstu wewnątrz */
+    text-align: center;
+    
+    /* Odstęp od góry */
+    margin-top: 100px;
+    
+    /* Padding wewnętrzny */
+    padding: 40px;
+    
+    /* Ciemniejsze tło z lekką przezroczystością */
+    background-color: rgba(22, 33, 62, 0.9);
+    
+    /* Zaokrąglone rogi */
+    border-radius: 12px;
+    
+    /* Subtelny cień dla głębi */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Tytuł gry na ekranie startowym */
+#startScreen h1 {
+    /* Stonowany niebieski odcień */
+    color: #7b8cde;
+    
+    /* Rozmiar czcionki */
+    font-size: 2.5rem;
+    
+    /* Odstęp pod tytułem */
+    margin-bottom: 30px;
+    
+    /* Grubość czcionki */
+    font-weight: 600;
+}
+
+/* ==============================================
+   STYLE PRZYCISKÓW
+   ============================================== */
+
+/* Wspólne style dla wszystkich przycisków */
+button {
+    /* Stonowany fioletowo-niebieski kolor tła */
+    background-color: #4a5568;
+    
+    /* Kolor tekstu */
+    color: #e0e0e0;
+    
+    /* Brak obramowania */
+    border: none;
+    
+    /* Padding: góra/dół i lewo/prawo */
+    padding: 12px 30px;
+    
+    /* Rozmiar czcionki */
+    font-size: 1.1rem;
+    
+    /* Zaokrąglone rogi */
+    border-radius: 8px;
+    
+    /* Kursor wskazujący na klikalność */
+    cursor: pointer;
+    
+    /* Płynna animacja przy hover */
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+/* Efekt hover na przyciskach */
+button:hover {
+    /* Jaśniejszy odcień przy najechaniu */
+    background-color: #5a6578;
+    
+    /* Lekkie powiększenie */
+    transform: scale(1.05);
+}
+
+/* Efekt aktywnego kliknięcia */
+button:active {
+    /* Lekkie zmniejszenie przy kliknięciu */
+    transform: scale(0.98);
+}
+
+/* ==============================================
+   INTERFEJS UŻYTKOWNIKA (UI)
+   ============================================== */
+
+#ui {
+    /* Flexbox do ułożenia elementów w rzędzie */
+    display: flex;
+    
+    /* Odstępy między elementami */
+    gap: 30px;
+    
+    /* Marginesy góra/dół */
+    margin: 20px 0;
+    
+    /* Tło paska UI */
+    background-color: rgba(22, 33, 62, 0.8);
+    
+    /* Padding wewnętrzny */
+    padding: 15px 30px;
+    
+    /* Zaokrąglone rogi */
+    border-radius: 8px;
+}
+
+/* Paragrafy w UI (Poziom, HP, Przedmioty) */
+#ui p {
+    /* Rozmiar czcionki */
+    font-size: 1rem;
+    
+    /* Stonowany szary kolor dla etykiet */
+    color: #a0a0a0;
+}
+
+/* Wartości liczbowe w UI (span wewnątrz p) */
+#ui span {
+    /* Wyróżniający kolor dla wartości */
+    color: #7b8cde;
+    
+    /* Pogrubienie */
+    font-weight: 700;
+}
+
+/* ==============================================
+   CANVAS GRY
+   ============================================== */
+
+#gameCanvas {
+    /* Ciemne obramowanie wokół canvasa */
+    border: 3px solid #2d3748;
+    
+    /* Zaokrąglone rogi */
+    border-radius: 8px;
+    
+    /* Cień dla efektu głębi */
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+    
+    /* Tło canvasa (widoczne zanim JS narysuje labirynt) */
+    background-color: #0f0f1a;
+}
+
+/* ==============================================
+   KOMUNIKATY
+   ============================================== */
+
+#message {
+    /* Odstęp od góry */
+    margin-top: 20px;
+    
+    /* Rozmiar czcionki */
+    font-size: 1.2rem;
+    
+    /* Zielonkawy kolor dla komunikatów sukcesu */
+    color: #68d391;
+    
+    /* Centrowanie */
+    text-align: center;
+    
+    /* Minimalna wysokość aby zapobiec "skakaniu" layoutu */
+    min-height: 30px;
+    
+    /* Pogrubienie */
+    font-weight: 500;
+}
+
+/* ==============================================
+   PRZYCISK RESTART
+   ============================================== */
+
+#restartButton {
+    /* Odstęp od góry */
+    margin-top: 20px;
+    
+    /* Ciemniejszy, bardziej stonowany kolor */
+    background-color: #3d4452;
+}
+
+/* Hover dla przycisku restart */
+#restartButton:hover {
+    background-color: #4d5462;
+}
+
+/* ==============================================
+   RESPONSYWNOŚĆ - MNIEJSZE EKRANY
+   ============================================== */
+
+@media (max-width: 700px) {
+    /* Canvas skaluje się do szerokości ekranu */
+    #gameCanvas {
+        width: 95vw;
+        height: auto;
+    }
+    
+    /* UI układa się pionowo */
+    #ui {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+    
+    /* Mniejszy tytuł */
+    #startScreen h1 {
+        font-size: 1.8rem;
+    }
+}
