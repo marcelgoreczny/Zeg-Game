@@ -22,28 +22,6 @@ const rows = 10;
 const cols = 10;
 
 // =========================
-// GRAFIKI
-// =========================
-
-const playerImage = new Image();
-player.src = "player.png"; // tekstury jeszcze konczone
-
-const wallImage = new Image();
-wallImage.src = "gray brick wall.png";
-
-const floorImage = new Image();
-floorImage.src = "floor 4.png";
-
-const enemyImage = new Image();
-enemyImage.src = "enemy.png"; // tekstury jeszcze konczone
-
-const itemImage = new Image();
-itemImage.src = "item.png"; // tekstury jeszcze konczone
-
-const goalImage = new Image();
-goalImage.src = "goal.png"; // tekstury jeszcze konczone
-
-// =========================
 // DANE GRACZA
 // =========================
 
@@ -53,6 +31,54 @@ const player = {
     hp: 100,
     items: 0
 };
+
+// =========================
+// GRAFIKI
+// =========================
+
+const playerImage = new Image();
+playerImage.src = "player.png";
+
+const wallImage = new Image();
+wallImage.src = "gray brick wall.png";
+
+const floorImage = new Image();
+floorImage.src = "floor 4.png";
+
+const enemyImage = new Image();
+enemyImage.src = "enemy.png";
+
+const itemImage = new Image();
+itemImage.src = "item.png";
+
+const goalImage = new Image();
+goalImage.src = "goal.png";
+
+// =========================
+// LICZNIK ZAŁADOWANYCH OBRAZÓW
+// =========================
+
+let imagesLoaded = 0;
+const totalImages = 6;
+
+function checkIfAllImagesLoaded() {
+    return imagesLoaded === totalImages;
+}
+
+// Dodaj event listeners dla każdego obrazu
+playerImage.onload = () => { imagesLoaded++; };
+wallImage.onload = () => { imagesLoaded++; };
+floorImage.onload = () => { imagesLoaded++; };
+enemyImage.onload = () => { imagesLoaded++; };
+itemImage.onload = () => { imagesLoaded++; };
+goalImage.onload = () => { imagesLoaded++; };
+
+playerImage.onerror = () => { console.error("Błąd: nie można załadować player.png"); imagesLoaded++; };
+wallImage.onerror = () => { console.error("Błąd: nie można załadować gray brick wall.png"); imagesLoaded++; };
+floorImage.onerror = () => { console.error("Błąd: nie można załadować floor 4.png"); imagesLoaded++; };
+enemyImage.onerror = () => { console.error("Błąd: nie można załadować enemy.png"); imagesLoaded++; };
+itemImage.onerror = () => { console.error("Błąd: nie można załadować item.png"); imagesLoaded++; };
+goalImage.onerror = () => { console.error("Błąd: nie można załadować goal.png"); imagesLoaded++; };
 
 // =========================
 // SYSTEM POZIOMÓW
@@ -158,6 +184,8 @@ const goal = {
     x: 0,
     y: 0
 };
+
+let gameActive = false;
 
 // =========================
 // WCZYTYWANIE POZIOMU
@@ -353,6 +381,7 @@ function checkEnemyCollision() {
             if (player.hp <= 0) {
 
                 message.innerText = "Koniec gry";
+                gameActive = false;
             }
         }
     });
@@ -398,6 +427,7 @@ function nextLevel() {
     if (currentLevel >= levels.length) {
 
         message.innerText = "Wygrana";
+        gameActive = false;
         return;
     }
 
@@ -455,6 +485,8 @@ function drawGame() {
 
 window.addEventListener("keydown", function(event) {
 
+    if (!gameActive) return;
+
     let newX = player.x;
     let newY = player.y;
 
@@ -487,13 +519,17 @@ window.addEventListener("keydown", function(event) {
 // RUCH PRZECIWNIKÓW CO 1 SEKUNDĘ
 // =========================
 
-setInterval(function() {
+let enemyInterval = null;
 
-    moveEnemies();
-
-    drawGame();
-
-}, 1000);
+function startEnemyMovement() {
+    if (enemyInterval) clearInterval(enemyInterval);
+    enemyInterval = setInterval(function() {
+        if (gameActive) {
+            moveEnemies();
+            drawGame();
+        }
+    }, 1000);
+}
 
 // =========================
 // START GRY
@@ -501,20 +537,55 @@ setInterval(function() {
 
 startButton.addEventListener("click", function() {
 
+    if (!checkIfAllImagesLoaded()) {
+        message.innerText = "Czekanie na załadowanie obrazów...";
+        
+        // Spróbuj załadować co 100ms
+        const loadCheckInterval = setInterval(function() {
+            if (checkIfAllImagesLoaded()) {
+                clearInterval(loadCheckInterval);
+                startGame();
+            }
+        }, 100);
+        
+        // Timeout po 5 sekundach
+        setTimeout(function() {
+            if (!checkIfAllImagesLoaded()) {
+                clearInterval(loadCheckInterval);
+                console.warn("Niektóre obrazy się nie załadowały, ale gra i tak się uruchomi");
+                startGame();
+            }
+        }, 5000);
+        
+    } else {
+        startGame();
+    }
+});
+
+function startGame() {
     document.getElementById("startScreen").style.display = "none";
+    message.innerText = "";
+    gameActive = true;
+
+    currentLevel = 0;
+    player.x = 1;
+    player.y = 1;
+    player.hp = 100;
+    player.items = 0;
 
     loadLevel(currentLevel);
-
     updateUI();
-
     drawGame();
-});
+    startEnemyMovement();
+}
 
 // =========================
 // RESTART GRY
 // =========================
 
 restartButton.addEventListener("click", function() {
+
+    if (enemyInterval) clearInterval(enemyInterval);
 
     currentLevel = 0;
 
@@ -526,10 +597,13 @@ restartButton.addEventListener("click", function() {
     player.items = 0;
 
     message.innerText = "";
+    gameActive = true;
 
     loadLevel(currentLevel);
 
     updateUI();
 
     drawGame();
+
+    startEnemyMovement();
 });
