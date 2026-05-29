@@ -51,16 +51,16 @@ const player = {
 // =========================
 
 const playerImage = new Image();
-playerImage.src = "player.png";
+playerImage.src = "walk_down_1.png";
 
 const wallImage = new Image();
-wallImage.src = "gray brick wall.png";
+wallImage.src = "sciana-f-r.png";
 
 const floorImage = new Image();
 floorImage.src = "floor 4.png";
 
 const enemyImage = new Image();
-enemyImage.src = "enemy.png";
+enemyImage.src = "stworek.png";
 
 const itemImage = new Image();
 itemImage.src = "item.png";
