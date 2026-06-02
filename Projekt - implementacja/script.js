@@ -50,7 +50,9 @@ const player = {
     isPunching: false,
     punchDirection: null, // "left" lub "right"
     punchStartTime: 0,
-    punchDuration: 500 // Czas trwania animacji punchingu w ms
+    punchDuration: 500, // Czas trwania animacji punchingu w ms
+    punchCount: 0, // Licznik punchów dla tego kierunku
+    lastPunchDirection: null // Ostatni kierunek punchingu
 };
 
 // =========================
@@ -241,8 +243,21 @@ function punch(direction) {
 
     console.log("⚔️ Punch " + direction + "!");
 
-    // Zadawanie obrażeń wrogom w kierunku uderzenia
-    dealPunchDamage(direction);
+    // Sprawdzenie czy to jest drugi punch w tym kierunku
+    if (player.lastPunchDirection === direction) {
+        player.punchCount++;
+    } else {
+        player.punchCount = 1;
+        player.lastPunchDirection = direction;
+    }
+
+    // Jeśli to drugi punch w tym kierunku, zadaj obrażenia
+    if (player.punchCount >= 2) {
+        console.log("💥 COMBO! Drugi punch - zadawanie obrażeń!");
+        dealPunchDamage(direction);
+        player.punchCount = 0; // Zresetuj licznik
+        player.lastPunchDirection = null;
+    }
 
     drawGame();
 }
@@ -263,13 +278,28 @@ function dealPunchDamage(direction) {
         targetX = player.x - punchRange;
     }
 
-    // Sprawdzenie czy wróg jest na tych współrzędnych
-    enemies.forEach((enemy, index) => {
-        if (enemy.x === targetX && enemy.y === targetY) {
-            console.log("💥 Trafienie! Wróg pokonany!");
-            enemies.splice(index, 1); // Usunięcie wroga
+    // Sprawdzenie czy wróg jest na tych współrzędnych lub w zasięgu (1 kratka)
+    for (let i = enemies.length - 1; i >= 0; i--) {
+        const enemy = enemies[i];
+        const distX = Math.abs(enemy.x - player.x);
+        const distY = Math.abs(enemy.y - player.y);
+
+        // Sprawdzenie czy wróg jest na tej samej pozycji lub 1 kratkę od gracza
+        if ((distX <= 1 && distY === 0) || (distX === 0 && distY <= 1) || (distX === 1 && distY === 1)) {
+            // Jeśli punch idzie w prawo, sprawdzaj tylko wrogów na prawo
+            if (direction === "right" && enemy.x > player.x) {
+                console.log("💥 Trafienie! Wróg pokonany!");
+                enemies.splice(i, 1);
+                break;
+            }
+            // Jeśli punch idzie w lewo, sprawdzaj tylko wrogów na lewo
+            else if (direction === "left" && enemy.x < player.x) {
+                console.log("💥 Trafienie! Wróg pokonany!");
+                enemies.splice(i, 1);
+                break;
+            }
         }
-    });
+    }
 }
 
 // =========================
@@ -371,21 +401,20 @@ function findGoalPosition(maze) {
 }
 
 // =========================
-// GENEROWANIE PRZECIWNIKÓW
+// GENEROWANIE PRZECIWNIKÓW - 20 STWORKÓW
 // =========================
 
 function generateEnemies(maze, count, playerX, playerY) {
     let enemies = [];
     let placed = 0;
 
-    while (placed < count && placed < 100) { // Limit 100 prób
+    while (placed < count && placed < 500) { // Zwiększony limit prób
         let x = Math.floor(Math.random() * (cols - 2)) + 1;
         let y = Math.floor(Math.random() * (rows - 2)) + 1;
 
         // Sprawdzenie warunków
         if (maze[y][x] === 0 && 
             !(x === playerX && y === playerY) && 
-            (Math.abs(x - playerX) > 5 || Math.abs(y - playerY) > 5) &&
             !enemies.some(e => e.x === x && e.y === y)) {
             enemies.push({ x: x, y: y });
             placed++;
@@ -396,14 +425,14 @@ function generateEnemies(maze, count, playerX, playerY) {
 }
 
 // =========================
-// GENEROWANIE PRZEDMIOTÓW
+// GENEROWANIE PRZEDMIOTÓW - 15 ITEMÓW
 // =========================
 
 function generateItems(maze, count, playerX, playerY, goalX, goalY) {
     let items = [];
     let placed = 0;
 
-    while (placed < count && placed < 100) { // Limit 100 prób
+    while (placed < count && placed < 500) { // Zwiększony limit prób
         let x = Math.floor(Math.random() * (cols - 2)) + 1;
         let y = Math.floor(Math.random() * (rows - 2)) + 1;
 
@@ -428,11 +457,11 @@ function generateLevel(levelNumber) {
     const maze = generateMaze(cols, rows);
     const goalPos = findGoalPosition(maze);
     
-    // Liczba przeciwników rośnie z poziomem
-    const enemyCount = Math.min(2 + levelNumber, 6);
+    // Zawsze 20 stworków niezależnie od poziomu
+    const enemyCount = 20;
     
-    // Liczba przedmiotów rośnie z poziomem
-    const itemCount = 1 + Math.floor(levelNumber / 2);
+    // Zawsze 15 przedmiotów niezależnie od poziomu
+    const itemCount = 15;
 
     const enemies = generateEnemies(maze, enemyCount, 1, 1);
     const items = generateItems(maze, itemCount, 1, 1, goalPos.x, goalPos.y);
@@ -586,6 +615,8 @@ function loadLevel(levelIndex) {
     goal.y = levelData.goal.y;
 
     console.log("Cel znajduje się na:", goal.x, goal.y, "- Podłoga?", maze[goal.y][goal.x] === 0);
+    console.log("Wrogów na mapie:", enemies.length);
+    console.log("Przedmiotów na mapie:", items.length);
 }
 
 // =========================
@@ -1093,6 +1124,8 @@ startButton.addEventListener("click", function() {
     player.animationFrame = 0;
     player.isPunching = false;
     player.punchDirection = null;
+    player.punchCount = 0;
+    player.lastPunchDirection = null;
 
     loadLevel(currentLevel);
     updateUI();
@@ -1104,6 +1137,7 @@ startButton.addEventListener("click", function() {
     console.log("Rozmiar płytki:", tileSize);
     console.log("Radius widzenia:", visionRadius, "kratek");
     console.log("Sterowanie: Strzałki/WASD - ruch, Q - punch lewo, E - punch prawo");
+    console.log("Aby zabić wroga: wciśnij Q/E dwa razy w tym samym kierunku (combo)");
 });
 
 // =========================
@@ -1123,6 +1157,8 @@ restartButton.addEventListener("click", function() {
     player.animationFrame = 0;
     player.isPunching = false;
     player.punchDirection = null;
+    player.punchCount = 0;
+    player.lastPunchDirection = null;
 
     message.innerText = "";
     gameActive = true;
