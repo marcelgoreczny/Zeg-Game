@@ -43,15 +43,77 @@ const player = {
     x: 1,
     y: 1,
     hp: 100,
-    items: 0
+    items: 0,
+    direction: "down", // down, up, left, right
+    isMoving: false,
+    animationFrame: 0,
+    isPunching: false,
+    punchDirection: null, // "left" lub "right"
+    punchStartTime: 0,
+    punchDuration: 500 // Czas trwania animacji punchingu w ms
 };
+
+// =========================
+// TEKSTURY POSTACI - WSZYSTKIE WARIANTY
+// =========================
+
+const playerTextures = {
+    walk_left: new Image(),
+    stand_left: new Image(),
+    walk_right: new Image(),
+    stand_right: new Image(),
+    walk_up: new Image(),
+    walk_up_2: new Image(),
+    walk_down_1: new Image(),
+    walk_down_2: new Image(),
+    stand_down: new Image(),
+    punch_left: new Image(),
+    punch_right: new Image()
+};
+
+playerTextures.walk_left.src = "walk_left.png";
+playerTextures.stand_left.src = "stand_left.png";
+playerTextures.walk_right.src = "walk_right.png";
+playerTextures.stand_right.src = "stand_right.png";
+playerTextures.walk_up.src = "walk_up.png";
+playerTextures.walk_up_2.src = "walk_up_2.png";
+playerTextures.walk_down_1.src = "walk_down_1.png";
+playerTextures.walk_down_2.src = "walk_down_2.png";
+playerTextures.stand_down.src = "walk_down_1.png"; // Fallback do walk_down_1
+playerTextures.punch_left.src = "punch_left.png";
+playerTextures.punch_right.src = "punch_right.png";
+
+// =========================
+// STATUS ZAŁADOWANIA TEKSTUR POSTACI
+// =========================
+
+const playerImageStatus = {
+    walk_left: false,
+    stand_left: false,
+    walk_right: false,
+    stand_right: false,
+    walk_up: false,
+    walk_up_2: false,
+    walk_down_1: false,
+    walk_down_2: false,
+    punch_left: false,
+    punch_right: false
+};
+
+// Event listenery dla załadowania tekstur postaci
+Object.keys(playerTextures).forEach(key => {
+    playerTextures[key].onload = () => {
+        playerImageStatus[key] = true;
+        console.log(`✓ ${key}.png załadowany`);
+    };
+    playerTextures[key].onerror = () => {
+        console.warn(`✗ Nie można załadować ${key}.png - użyję fallback`);
+    };
+});
 
 // =========================
 // GRAFIKI - ŁADOWANIE Z FALLBACK
 // =========================
-
-const playerImage = new Image();
-playerImage.src = "walk_down_1.png";
 
 const wallImage = new Image();
 wallImage.src = "sciana-f-r.png";
@@ -73,7 +135,6 @@ goalImage.src = "goal.png";
 // =========================
 
 const imageStatus = {
-    player: false,
     wall: false,
     floor: false,
     enemy: false,
@@ -82,14 +143,6 @@ const imageStatus = {
 };
 
 // Event listenery dla załadowania
-playerImage.onload = () => {
-    imageStatus.player = true;
-    console.log("✓ player.png załadowany");
-};
-playerImage.onerror = () => {
-    console.warn("✗ Nie można załadować player.png - użyję fallback");
-};
-
 wallImage.onload = () => {
     imageStatus.wall = true;
     console.log("✓ gray brick wall.png załadowany");
@@ -129,6 +182,112 @@ goalImage.onload = () => {
 goalImage.onerror = () => {
     console.warn("✗ Nie można załadować goal.png - użyję fallback");
 };
+
+// =========================
+// FUNKCJA POBIERANIA ODPOWIEDNIEJ TEKSTURY POSTACI
+// =========================
+
+function getPlayerTexture() {
+    // Jeśli postać atakuje, wyświetl animację punchingu
+    if (player.isPunching) {
+        if (player.punchDirection === "left") {
+            return "punch_left";
+        } else if (player.punchDirection === "right") {
+            return "punch_right";
+        }
+    }
+
+    let textureName = "";
+
+    if (player.isMoving) {
+        // Jeśli postać się porusza, używaj tekstury chodzenia
+        if (player.direction === "left") {
+            textureName = "walk_left";
+        } else if (player.direction === "right") {
+            textureName = "walk_right";
+        } else if (player.direction === "up") {
+            // Animacja dla góry - alternacja między walk_up i walk_up_2
+            textureName = player.animationFrame % 2 === 0 ? "walk_up" : "walk_up_2";
+        } else if (player.direction === "down") {
+            // Animacja dla dołu - alternacja między walk_down_1 i walk_down_2
+            textureName = player.animationFrame % 2 === 0 ? "walk_down_1" : "walk_down_2";
+        }
+    } else {
+        // Jeśli postać stoi w miejscu, używaj tekstury stania
+        if (player.direction === "left") {
+            textureName = "stand_left";
+        } else if (player.direction === "right") {
+            textureName = "stand_right";
+        } else if (player.direction === "up") {
+            textureName = "walk_up"; // Brak walk_up stania, używamy walk_up
+        } else if (player.direction === "down") {
+            textureName = "walk_down_1"; // Domyślnie walk_down_1
+        }
+    }
+
+    return textureName;
+}
+
+// =========================
+// FUNKCJA WYKONANIA PUNCHINGU
+// =========================
+
+function punch(direction) {
+    if (player.isPunching) return; // Jeśli już atakuje, nie pozwól na kolejny atak
+
+    player.isPunching = true;
+    player.punchDirection = direction;
+    player.punchStartTime = Date.now();
+
+    console.log("⚔️ Punch " + direction + "!");
+
+    // Zadawanie obrażeń wrogom w kierunku uderzenia
+    dealPunchDamage(direction);
+
+    drawGame();
+}
+
+// =========================
+// ZADAWANIE OBRAŻEŃ PODCZAS PUNCHINGU
+// =========================
+
+function dealPunchDamage(direction) {
+    const punchRange = 1; // Dystans, na który sięga punch
+    let targetX = player.x;
+    let targetY = player.y;
+
+    // Ustalenie kierunku ataku
+    if (direction === "right") {
+        targetX = player.x + punchRange;
+    } else if (direction === "left") {
+        targetX = player.x - punchRange;
+    }
+
+    // Sprawdzenie czy wróg jest na tych współrzędnych
+    enemies.forEach((enemy, index) => {
+        if (enemy.x === targetX && enemy.y === targetY) {
+            console.log("💥 Trafienie! Wróg pokonany!");
+            enemies.splice(index, 1); // Usunięcie wroga
+        }
+    });
+}
+
+// =========================
+// AKTUALIZACJA STANU PUNCHINGU
+// =========================
+
+function updatePunchState() {
+    if (player.isPunching) {
+        const currentTime = Date.now();
+        const elapsed = currentTime - player.punchStartTime;
+
+        // Jeśli upłynął czas punchingu, zakończ animację
+        if (elapsed >= player.punchDuration) {
+            player.isPunching = false;
+            player.punchDirection = null;
+        }
+    }
+}
 
 // =========================
 // GENEROWANIE LOSOWEGO LABIRYNTU
@@ -316,7 +475,7 @@ const camera = {
 };
 
 function updateCamera() {
-    // Wyśrodkuj kamerę na graczu - gracze zawsze na środku ekranu
+    // Wyśrodkuj kamerę na graczu - gracje zawsze na środku ekranu
     camera.x = player.x * tileSize - canvas.width / 2;
     camera.y = player.y * tileSize - canvas.height / 2;
 
@@ -486,16 +645,19 @@ function drawMaze() {
 
 function drawPlayer() {
     const screen = worldToScreen(player.x * tileSize, player.y * tileSize);
-    
-    if (imageStatus.player) {
+    const textureName = getPlayerTexture();
+    const texture = playerTextures[textureName];
+
+    if (playerImageStatus[textureName] && texture) {
         ctx.drawImage(
-            playerImage,
+            texture,
             screen.screenX,
             screen.screenY,
             tileSize,
             tileSize
         );
     } else {
+        // Fallback - jeśli tekstura się nie załadowała
         const posX = screen.screenX;
         const posY = screen.screenY;
         ctx.fillStyle = "#00ff00";
@@ -812,29 +974,51 @@ function drawGame() {
 }
 
 // =========================
-// STEROWANIE GRACZEM
+// STEROWANIE GRACZEM - RUCH I ATAK
 // =========================
 
 window.addEventListener("keydown", function(event) {
     if (!gameActive) return;
 
+    // Obsługa punchingu
+    if (event.key === "e" || event.key === "E") {
+        event.preventDefault();
+        punch("right"); // E = punch w prawo
+        return;
+    }
+
+    if (event.key === "q" || event.key === "Q") {
+        event.preventDefault();
+        punch("left"); // Q = punch w lewo
+        return;
+    }
+
     let newX = player.x;
     let newY = player.y;
+    let moved = false;
 
     if (event.key === "ArrowLeft" || event.key === "a") {
         newX--;
+        player.direction = "left";
+        moved = true;
     }
 
     if (event.key === "ArrowRight" || event.key === "d") {
         newX++;
+        player.direction = "right";
+        moved = true;
     }
 
     if (event.key === "ArrowUp" || event.key === "w") {
         newY--;
+        player.direction = "up";
+        moved = true;
     }
 
     if (event.key === "ArrowDown" || event.key === "s") {
         newY++;
+        player.direction = "down";
+        moved = true;
     }
 
     // Sprawdzenie granic i kolizji
@@ -842,7 +1026,33 @@ window.addEventListener("keydown", function(event) {
         if (maze[newY][newX] === 0) {
             player.x = newX;
             player.y = newY;
+            player.isMoving = true;
+            player.animationFrame++;
         }
+    }
+
+    // Jeśli próbujemy się poruszyć, ale nie możemy (ściana), ustawiamy tylko kierunek
+    if (moved && (newY < 0 || newY >= rows || newX < 0 || newX >= cols || maze[newY][newX] !== 0)) {
+        player.isMoving = false;
+    }
+
+    drawGame();
+});
+
+// =========================
+// OBSŁUGA KEYUP - KONIEC RUCHU
+// =========================
+
+window.addEventListener("keyup", function(event) {
+    if (!gameActive) return;
+
+    // Jeśli zwolnili klawisz, postać przestaje się poruszać
+    if (event.key === "ArrowLeft" || event.key === "a" ||
+        event.key === "ArrowRight" || event.key === "d" ||
+        event.key === "ArrowUp" || event.key === "w" ||
+        event.key === "ArrowDown" || event.key === "s") {
+        player.isMoving = false;
+        player.animationFrame = 0;
     }
 
     drawGame();
@@ -857,6 +1067,7 @@ function startEnemyMovement() {
     enemyInterval = setInterval(function() {
         if (gameActive) {
             moveEnemies();
+            updatePunchState();
             drawGame();
         }
     }, 1000);
@@ -877,6 +1088,11 @@ startButton.addEventListener("click", function() {
     player.y = 1;
     player.hp = 100;
     player.items = 0;
+    player.direction = "down";
+    player.isMoving = false;
+    player.animationFrame = 0;
+    player.isPunching = false;
+    player.punchDirection = null;
 
     loadLevel(currentLevel);
     updateUI();
@@ -887,6 +1103,7 @@ startButton.addEventListener("click", function() {
     console.log("Rozmiar labiryntu:", cols + "x" + rows);
     console.log("Rozmiar płytki:", tileSize);
     console.log("Radius widzenia:", visionRadius, "kratek");
+    console.log("Sterowanie: Strzałki/WASD - ruch, Q - punch lewo, E - punch prawo");
 });
 
 // =========================
@@ -901,6 +1118,11 @@ restartButton.addEventListener("click", function() {
     player.y = 1;
     player.hp = 100;
     player.items = 0;
+    player.direction = "down";
+    player.isMoving = false;
+    player.animationFrame = 0;
+    player.isPunching = false;
+    player.punchDirection = null;
 
     message.innerText = "";
     gameActive = true;
