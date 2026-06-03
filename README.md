@@ -7,7 +7,7 @@ Czas realizacji : od 10.04.2026 do 08.06.2026.
 
 Autorzy : Marcel Góreczny i Konrad Gawęda.
 
-Praca: figma
+Praca: figma.
 
 Fabuła : Gracz jest wcielony w wikinga (Bjorn) i jego cel to jest dostanie się do Valhalli. Podczas swojej wędrówki napotkał jednego z Bogów Nordyckich - Thora. Thor nakazał mu przejście przez labirynt pełen zagrożeń i pułapek. Bjorn podjął się wyzwania, pomimo że jest ono wymagające. W labirycie czekają na niego przeciwnicy i liczne pułapki. Gdy gracz dojdzie do końca wyczerpującej wędrówki w labiryncie, Thor przepuści go do obiecanej Valhalli.
 
