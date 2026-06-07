@@ -52,7 +52,8 @@ const player = {
     punchStartTime: 0,
     punchDuration: 500, // Czas trwania animacji punchingu w ms
     punchCount: 0, // Licznik punchów dla tego kierunku
-    lastPunchDirection: null // Ostatni kierunek punchingu
+    lastPunchDirection: null, // Ostatni kierunek punchingu
+    enemiesKilled: 0 // Licznik zniszczonych wrogów
 };
 
 // =========================
@@ -186,6 +187,29 @@ goalImage.onerror = () => {
 };
 
 // =========================
+// ZMIENNE KOMUNIKATÓW POZIOMU
+// =========================
+
+let levelMessageTimeout = null;
+let levelMessageVisible = true;
+
+function showLevelMessage(text) {
+    levelMessageVisible = true;
+    message.innerText = text;
+    
+    // Wyczyść poprzedni timeout jeśli istnieje
+    if (levelMessageTimeout) clearTimeout(levelMessageTimeout);
+    
+    // Ukryj wiadomość po 30 sekundach
+    levelMessageTimeout = setTimeout(() => {
+        if (levelMessageVisible) {
+            levelMessageVisible = false;
+            message.innerText = "";
+        }
+    }, 30000);
+}
+
+// =========================
 // FUNKCJA POBIERANIA ODPOWIEDNIEJ TEKSTURY POSTACI
 // =========================
 
@@ -275,6 +299,8 @@ function dealPunchDamage(direction) {
         if (player.x === enemy.x && player.y === enemy.y) {
             console.log("💥 Trafienie! Wróg pokonany!");
             enemies.splice(i, 1);
+            player.enemiesKilled++;
+            console.log("Zniszczonych wrogów: " + player.enemiesKilled);
             break;
         }
     }
@@ -913,12 +939,39 @@ function checkEnemyCollision() {
 }
 
 // =========================
+// POBRANIE WYMAGANEJ LICZBY WROGÓW DO ZNISZCZENIA
+// =========================
+
+function getRequiredEnemiesKilled(levelIndex) {
+    const requirements = {
+        0: 2, // Poziom 1 - 2 wrogów
+        1: 3, // Poziom 2 - 3 wrogów
+        2: 4, // Poziom 3 - 4 wrogów
+        3: 4, // Poziom 4 - 4 wrogów
+        4: 5  // Poziom 5 - 5 wrogów
+    };
+    return requirements[levelIndex] || 2;
+}
+
+// =========================
 // SPRAWDZENIE METY
 // =========================
 
 function checkGoal() {
     if (player.x === goal.x && player.y === goal.y) {
-        nextLevel();
+        const requiredKills = getRequiredEnemiesKilled(currentLevel);
+        
+        if (player.enemiesKilled >= requiredKills) {
+            nextLevel();
+        } else {
+            const remaining = requiredKills - player.enemiesKilled;
+            message.innerText = "Musisz zniszczyć jeszcze " + remaining + " wrogów!";
+            setTimeout(() => {
+                if (levelMessageVisible) {
+                    message.innerText = "";
+                }
+            }, 3000);
+        }
     }
 }
 
@@ -939,10 +992,21 @@ function nextLevel() {
 
     player.x = 1;
     player.y = 1;
+    player.enemiesKilled = 0; // Zresetuj licznik wrogów
 
     updateUI();
 
-    message.innerText = "Poziom " + (currentLevel + 1) + " z " + totalLevels;
+    // Wyświetl odpowiedni komunikat
+    const requiredKills = getRequiredEnemiesKilled(currentLevel);
+    const messages = {
+        0: "Żeby przejść do kolejnego poziomu, zniszcz 2 przeciwników",
+        1: "Żeby przejść do kolejnego poziomu, zniszcz 3 przeciwników",
+        2: "Żeby przejść do kolejnego poziomu, zniszcz 4 przeciwników",
+        3: "Żeby przejść do kolejnego poziomu, zniszcz 4 przeciwników",
+        4: "Żeby przejść do kolejnego poziomu, zniszcz 5 przeciwników"
+    };
+
+    showLevelMessage("Poziom " + (currentLevel + 1) + " z " + totalLevels + " - " + messages[currentLevel]);
 
     drawGame();
 }
@@ -1093,8 +1157,6 @@ function startEnemyMovement() {
 startButton.addEventListener("click", function() {
     document.getElementById("startScreen").style.display = "none";
 
-    message.innerText = "Poziom 1 z " + totalLevels;
-
     gameActive = true;
     currentLevel = 0;
     player.x = 1;
@@ -1108,9 +1170,14 @@ startButton.addEventListener("click", function() {
     player.punchDirection = null;
     player.punchCount = 0;
     player.lastPunchDirection = null;
+    player.enemiesKilled = 0;
 
     loadLevel(currentLevel);
     updateUI();
+    
+    // Wyświetl komunikat dla poziomu 1
+    showLevelMessage("Poziom 1 z " + totalLevels + " - Żeby przejść do kolejnego poziomu, zniszcz 2 przeciwników");
+    
     drawGame();
     startEnemyMovement();
 
@@ -1128,6 +1195,7 @@ startButton.addEventListener("click", function() {
 
 restartButton.addEventListener("click", function() {
     if (enemyInterval) clearInterval(enemyInterval);
+    if (levelMessageTimeout) clearTimeout(levelMessageTimeout);
 
     currentLevel = 0;
     player.x = 1;
@@ -1141,12 +1209,17 @@ restartButton.addEventListener("click", function() {
     player.punchDirection = null;
     player.punchCount = 0;
     player.lastPunchDirection = null;
+    player.enemiesKilled = 0;
 
     message.innerText = "";
     gameActive = true;
 
     loadLevel(currentLevel);
     updateUI();
+    
+    // Wyświetl komunikat dla poziomu 1
+    showLevelMessage("Poziom 1 z " + totalLevels + " - Żeby przejść do kolejnego poziomu, zniszcz 2 przeciwników");
+    
     drawGame();
     startEnemyMovement();
 
