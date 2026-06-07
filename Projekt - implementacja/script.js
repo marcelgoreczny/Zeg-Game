@@ -127,7 +127,7 @@ const enemyImage = new Image();
 enemyImage.src = "stworek.png";
 
 const itemImage = new Image();
-itemImage.src = "item.png";
+itemImage.src = "apteczka.png";
 
 const goalImage = new Image();
 goalImage.src = "goal.png";
@@ -171,10 +171,10 @@ enemyImage.onerror = () => {
 
 itemImage.onload = () => {
     imageStatus.item = true;
-    console.log("✓ item.png załadowany");
+    console.log("✓ apteczka.png załadowany");
 };
 itemImage.onerror = () => {
-    console.warn("✗ Nie można załadować item.png - użyję fallback");
+    console.warn("✗ Nie można załadować apteczka.png - użyję fallback");
 };
 
 goalImage.onload = () => {
@@ -267,37 +267,15 @@ function punch(direction) {
 // =========================
 
 function dealPunchDamage(direction) {
-    const punchRange = 1; // Dystans, na który sięga punch
-    let targetX = player.x;
-    let targetY = player.y;
-
-    // Ustalenie kierunku ataku
-    if (direction === "right") {
-        targetX = player.x + punchRange;
-    } else if (direction === "left") {
-        targetX = player.x - punchRange;
-    }
-
-    // Sprawdzenie czy wróg jest na tych współrzędnych lub w zasięgu (1 kratka)
+    // Sprawdzenie czy gracz stoi na tym samym polu co wróg
     for (let i = enemies.length - 1; i >= 0; i--) {
         const enemy = enemies[i];
-        const distX = Math.abs(enemy.x - player.x);
-        const distY = Math.abs(enemy.y - player.y);
-
-        // Sprawdzenie czy wróg jest na tej samej pozycji lub 1 kratkę od gracza
-        if ((distX <= 1 && distY === 0) || (distX === 0 && distY <= 1) || (distX === 1 && distY === 1)) {
-            // Jeśli punch idzie w prawo, sprawdzaj tylko wrogów na prawo
-            if (direction === "right" && enemy.x > player.x) {
-                console.log("💥 Trafienie! Wróg pokonany!");
-                enemies.splice(i, 1);
-                break;
-            }
-            // Jeśli punch idzie w lewo, sprawdzaj tylko wrogów na lewo
-            else if (direction === "left" && enemy.x < player.x) {
-                console.log("💥 Trafienie! Wróg pokonany!");
-                enemies.splice(i, 1);
-                break;
-            }
+        
+        // Jeśli gracz i wróg są na tej samej pozycji
+        if (player.x === enemy.x && player.y === enemy.y) {
+            console.log("💥 Trafienie! Wróg pokonany!");
+            enemies.splice(i, 1);
+            break;
         }
     }
 }
@@ -425,7 +403,7 @@ function generateEnemies(maze, count, playerX, playerY) {
 }
 
 // =========================
-// GENEROWANIE PRZEDMIOTÓW - 15 ITEMÓW
+// GENEROWANIE APTECZEK - 30 SZTUK
 // =========================
 
 function generateItems(maze, count, playerX, playerY, goalX, goalY) {
@@ -441,7 +419,7 @@ function generateItems(maze, count, playerX, playerY, goalX, goalY) {
             !(x === playerX && y === playerY) && 
             !(x === goalX && y === goalY) &&
             !items.some(i => i.x === x && i.y === y)) {
-            items.push({ x: x, y: y, type: "hp" });
+            items.push({ x: x, y: y, type: "health" });
             placed++;
         }
     }
@@ -460,8 +438,8 @@ function generateLevel(levelNumber) {
     // Zawsze 20 stworków niezależnie od poziomu
     const enemyCount = 20;
     
-    // Zawsze 15 przedmiotów niezależnie od poziomu
-    const itemCount = 15;
+    // Zawsze 30 apteczek niezależnie od poziomu
+    const itemCount = 30;
 
     const enemies = generateEnemies(maze, enemyCount, 1, 1);
     const items = generateItems(maze, itemCount, 1, 1, goalPos.x, goalPos.y);
@@ -584,9 +562,9 @@ function drawTileFallback(x, y, type) {
         ctx.lineWidth = 2;
         ctx.stroke();
     } else if (type === "item") {
-        ctx.fillStyle = "#ffff00";
+        ctx.fillStyle = "#00ff00";
         ctx.fillRect(posX + tileSize / 4, posY + tileSize / 4, tileSize / 2, tileSize / 2);
-        ctx.strokeStyle = "#cccc00";
+        ctx.strokeStyle = "#00aa00";
         ctx.lineWidth = 1;
         ctx.strokeRect(posX + tileSize / 4, posY + tileSize / 4, tileSize / 2, tileSize / 2);
     } else if (type === "goal") {
@@ -616,7 +594,7 @@ function loadLevel(levelIndex) {
 
     console.log("Cel znajduje się na:", goal.x, goal.y, "- Podłoga?", maze[goal.y][goal.x] === 0);
     console.log("Wrogów na mapie:", enemies.length);
-    console.log("Przedmiotów na mapie:", items.length);
+    console.log("Apteczek na mapie:", items.length);
 }
 
 // =========================
@@ -702,7 +680,7 @@ function drawPlayer() {
 }
 
 // =========================
-// RYSOWANIE PRZEDMIOTÓW
+// RYSOWANIE APTECZEK
 // =========================
 
 function drawItems() {
@@ -836,7 +814,7 @@ function drawDirectionArrow() {
 // =========================
 
 function drawShadow() {
-    // Pozycja gracza na ekranie
+    // Pozycja gracza na ekranie (zawsze na środku)
     const playerScreenX = canvas.width / 2;
     const playerScreenY = canvas.height / 2;
     const lightRadius = visionRadius * tileSize;
@@ -847,32 +825,36 @@ function drawShadow() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.globalAlpha = 1.0;
 
-    // Radialne oświetlenie wokół gracza
+    // Utwórz radialny gradient - odkryj światło wokół gracza
     const gradient = ctx.createRadialGradient(
-        playerScreenX, playerScreenY, lightRadius * 0.5,
-        playerScreenX, playerScreenY, lightRadius * 1.2
+        playerScreenX, playerScreenY, lightRadius * 0.3,
+        playerScreenX, playerScreenY, lightRadius
     );
-    gradient.addColorStop(0, "rgba(0,0,0,0)");      // Środek transparentny (jasny)
-    gradient.addColorStop(1, "rgba(0,0,0,0.8)");    // Krawędź ciemna
+    gradient.addColorStop(0, "rgba(0,0,0,0)");      // Środek - pełna przezroczystość (jasny obszar)
+    gradient.addColorStop(1, "rgba(0,0,0,0.7)");    // Krawędź - pełny cień
 
     // Użyj trybu kompozycji aby "odkryć" światło
     ctx.globalCompositeOperation = "destination-out";
     ctx.fillStyle = gradient;
     ctx.beginPath();
-    ctx.arc(playerScreenX, playerScreenY, lightRadius * 1.2, 0, Math.PI * 2);
+    ctx.arc(playerScreenX, playerScreenY, lightRadius, 0, Math.PI * 2);
     ctx.fill();
     ctx.globalCompositeOperation = "source-over";
 }
 
 // =========================
-// ZBIERANIE PRZEDMIOTÓW
+// ZBIERANIE APTECZEK
 // =========================
 
 function collectItems() {
     items.forEach(function(item, index) {
         if (player.x === item.x && player.y === item.y) {
-            if (item.type === "hp") {
-                player.hp += 20;
+            if (item.type === "health") {
+                player.hp += 50;
+                // Ogranicza HP do maksymalnie 100
+                if (player.hp > 100) {
+                    player.hp = 100;
+                }
             }
 
             player.items++;
@@ -1137,7 +1119,7 @@ startButton.addEventListener("click", function() {
     console.log("Rozmiar płytki:", tileSize);
     console.log("Radius widzenia:", visionRadius, "kratek");
     console.log("Sterowanie: Strzałki/WASD - ruch, Q - punch lewo, E - punch prawo");
-    console.log("Aby zabić wroga: wciśnij Q/E dwa razy w tym samym kierunku (combo)");
+    console.log("Aby zabić wroga: wciśnij Q/E dwa razy (stań na tym samym polu co wróg)");
 });
 
 // =========================
